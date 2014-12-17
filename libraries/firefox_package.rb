@@ -21,8 +21,6 @@ class Chef
 
   class Resource::FirefoxPackage < Resource
     include Poise
-    # Work-around for poise issue #8
-    include Chef::Recipe::DSL
     actions(:install, :upgrade, :remove)
 
     attribute(:version, kind_of: String, name_attribute: true)
@@ -34,6 +32,8 @@ class Chef
 
   class Provider::FirefoxPackage < Provider
     include Poise
+    # Work-around for poise issue #8
+    include Chef::DSL::Recipe
 
     def action_install
       converge_by("installing Firefox #{new_resource.version}") do
