@@ -21,6 +21,8 @@ class Chef
 
   class Resource::FirefoxPackage < Resource
     include Poise
+    # Work-around for poise issue #8
+    include Chef::Recipe::DSL
     actions(:install, :upgrade, :remove)
 
     attribute(:version, kind_of: String, name_attribute: true)
@@ -114,9 +116,13 @@ class Chef
     end
 
     def install_package
-      remote_file ::File.join(Chef::Config[:file_cache_path], "firefox-#{new_resource.version}.#{platform_file_extension(new_resource.platform)}") do
+      cached_file = ::File.join(Chef::Config[:file_cache_path], "firefox-#{new_resource.version}.#{platform_file_extension(new_resource.platform)}") 
+      remote_file cached_file do
         source "#{new_resource.uri}/#{new_resource.version}/#{new_resource.platform}/#{new_resource.language}/firefox-#{new_resource.version}.#{platform_file_extension(new_resource.platform)}"
         checksum new_resource.checksum
+
+        # TODO: Create a cache of the current sha512 value.
+        not_if { new_resource.checksum == generate_sha512_checksum(cached_file) }
       end
     end
 
