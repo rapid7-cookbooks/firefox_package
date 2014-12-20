@@ -24,10 +24,11 @@ class Chef
     actions(:install, :upgrade, :remove)
 
     attribute(:version, kind_of: String, name_attribute: true)
-    attribute(:checksum, kind_of: String, default: lazy { self.upstream_file_checksum(platform, language, version) })
+    attribute(:checksum, kind_of: String)
     attribute(:uri, kind_of: String, default: 'https://download-installer.cdn.mozilla.net/pub/firefox/releases')
     attribute(:language, kind_of: String, default: 'en-US')
-    attribute(:platform, kind_of: String, default: lazy { node['platform'] })
+    attribute(:platform, kind_of: String, default: lazy { node['os'] })
+    attribute(:path, kind_of: String, default: lazy { node['os'] == 'windows' ? "C:/firefox/#{version}_#{language}" : "/opt/firefox/#{version}_#{language}" })
   end
 
   class Provider::FirefoxPackage < Provider
@@ -36,7 +37,7 @@ class Chef
     include Chef::DSL::Recipe
 
     def action_install
-      converge_by("installing Firefox #{new_resource.version}") do
+      converge_by("installing Firefox #{new_resource.version} #{new_resource.language}") do
         notifying_block do
            install_package
         end
@@ -60,69 +61,89 @@ class Chef
       end
     end
 
-    def generate_sha512_checksum(file)
-      checksum_file(file, OpenSSL::Digest::SHA512.new)
-    end
-
-    def checksum_file(file, digest)
-      File.open(file, 'rb') { |f| checksum_io(f, digest) }
-    end
-
-    def checksum_io(io, digest)
-      while chunk = io.read(1024 * 8)
-        digest.update(chunk)
+    def munged_platform
+      case new_resource.platform.to_s
+      when 'x86_64-linux', 'linux'
+        @munged_platform = 'linux-x86_64'
+      when 'i386-mingw32', 'windows'
+        @munged_platform = 'win32'
+      when 'darwin', /^universal.x86_64-darwin\d{2}$/
+        @munged_platform = 'mac'
+      else
+        @munged_platform = new_resource.platform
       end
-      digest.hexdigest
-    end
+    end 
 
-    def validate_signing_key(release_file, gpg_key, signature)
-      raise NotImplementedError, 'This is on my wishlist...'
-    end
-
-    def sha512_checksums_file
-      sums_file = 'SHA512SUMS'
-
-      remote_file ::File.join(Chef::Config[:file_cache_path], new_resource.version) do
-        source "#{new_resource.uri}/#{new_resource.version}/#{sums_file}"
+    def explode_tarball(file, dest_path)
+      directory dest_path do
+        recursive true
       end
 
-      @sha512_checksums_file = ::File.join(Chef::Config[:file_cache_path], new_resource.version)
-    end
-
-    def upstream_checksums
-      require 'csv'
-      @upstream_checksums = Array.new
-
-      checksums = CSV.read(sha512_checksums_file, 'r', {:headers => false, :col_sep => '\S+'})
-      checksums.each do |i|
-        @upstream_checksums << Hash[*i.join.split("  ").reverse]
+      execute 'untar-firefox' do
+        command "tar --strip-components=1 -xjf #{file} -C #{dest_path}"
+        not_if { ::File.exist?(::File.join(dest_path, 'firefox')) }
       end
     end
 
-    def platform_file_extension(platform)
-      case platform
-        when 'x86_64-linux' || 'linux-i686'
-          @platform_file_extension = 'tar.bz2'
-        when 'mac'
-          @platform_file_extension = 'dmg'
-        when 'win32' || 'windows'
-          @platform_file_extension = 'zip'
+    def windows_installer(file, version, lang, req_action)
+      windows_package "Mozilla Firefox #{version} (x86 #{lang})" do
+        source file
+        installer_type :custom
+        options '-ms'
+        action req_action
       end
     end
 
-    def upstream_file_checksum(platform, language, version)
-      upstream_file_key = upstream_checksums.keys.select { |key| key.to_s.match(/^#{platform}\/#{language}\/firfox-#{version}\.#{platform_file_extension}/) }
-      @upstream_file_checksum = upstream_checksums[:"#{upstream_file_key}"]
+    def requested_version_filename(versioned_uri)
+      chef_gem 'oga'
+
+      require 'net/http'
+      require 'oga'
+
+      uri = URI.parse(versioned_uri)
+      http = Net::HTTP.new(uri.host, uri.port)
+      if uri.port == 443
+        http.use_ssl = true
+        http.ssl_version = :TLSv1
+      end
+
+      request = Net::HTTP::Get.new(uri.request_uri)
+      response = http.request(request)
+      doc = Oga.parse_html(response.body)
+
+      @requested_version_filename = doc.xpath('string(/html/body/table/tr[4]/td[2])')
     end
+      
 
     def install_package
-      cached_file = ::File.join(Chef::Config[:file_cache_path], "firefox-#{new_resource.version}.#{platform_file_extension(new_resource.platform)}") 
-      remote_file cached_file do
-        source "#{new_resource.uri}/#{new_resource.version}/#{new_resource.platform}/#{new_resource.language}/firefox-#{new_resource.version}.#{platform_file_extension(new_resource.platform)}"
-        checksum new_resource.checksum
+      platform = munged_platform
+      versioned_uri = "#{new_resource.uri}/#{new_resource.version}/#{munged_platform}/#{new_resource.language}/"
+      filename = requested_version_filename(versioned_uri)
+      cached_file = ::File.join(Chef::Config[:file_cache_path], filename)
 
-        # TODO: Create a cache of the current sha512 value.
-        not_if { new_resource.checksum == generate_sha512_checksum(cached_file) }
+      remote_file cached_file do
+        source "#{versioned_uri}/#{filename}"
+        unless new_resource.checksum.nil? 
+          checksum new_resource.checksum
+        end
+      end
+
+      if platform == 'win32' 
+        windows_installer(filename, new_resource.version, new_resource.language, :install)
+      else
+        explode_tarball(cached_file, new_resource.path)
+        node.set['firefox_poise']['firefox']["#{new_resource.version}"]["#{new_resource.language}"] = "#{new_resource.path}"
+      end
+    end
+
+    def remove_package
+      if munged_platform == 'win32'
+        windows_installer(filename, new_resource.version, new_resource.language, :remove)
+      else
+        directory node['firefox_poise']['firefox']["#{new_resource.version}"]["#{new_resource.language}"] do 
+          recursive true
+          action :delete
+        end
       end
     end
 

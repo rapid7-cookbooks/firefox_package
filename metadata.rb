@@ -6,4 +6,8 @@ description      'Installs/Configures firefox_poise'
 long_description 'Installs/Configures firefox_poise'
 version          '0.1.0'
 
+supports 'windows'
+supports 'ubuntu'
+
 depends 'poise'
+depends 'windows'
