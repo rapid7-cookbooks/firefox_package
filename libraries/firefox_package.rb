@@ -29,6 +29,7 @@ class Chef
     attribute(:language, kind_of: String, default: 'en-US')
     attribute(:platform, kind_of: String, default: lazy { node['os'] })
     attribute(:path, kind_of: String, default: lazy { node['os'] == 'windows' ? "C:/firefox/#{version}_#{language}" : "/opt/firefox/#{version}_#{language}" })
+    attribute(:splay, kind_of: Integer, default: 0)
   end
 
   class Provider::FirefoxPackage < Provider
@@ -102,6 +103,7 @@ class Chef
 
       require 'net/http'
       require 'oga'
+      require 'digest/sha1'
 
       uri = URI.parse(download_uri)
       http = Net::HTTP.new(uri.host, uri.port)
@@ -114,7 +116,17 @@ class Chef
       response = http.request(request)
       doc = Oga.parse_html(response.body)
 
-      @requested_version_filename = doc.xpath('string(/html/body/table/tr[4]/td[2])')
+      cached_filename = ::File.join(Chef::Config[:file_cache_path], ::Digest::SHA1.hexdigest(download_uri))
+
+      unless ::File.exists?(cached_filename) && ::File.mtime(cached_filename) > Time.now - (60 * new_resource.splay) && ! ::File.zero?(cached_filename)
+        converge_by("Updating Firefox filename cache: #{cached_filename}") do
+          f = ::File.open(cached_filename, 'w')
+          f.write(doc.xpath('string(/html/body/table/tr[4]/td[2])'))
+          f.close
+        end
+      end
+
+      @requested_version_filename = ::File.read(cached_filename)
     end
       
 
@@ -129,6 +141,8 @@ class Chef
         unless new_resource.checksum.nil? 
           checksum new_resource.checksum
         end
+        action [:create, :touch]
+        not_if { ::File.exists?(cached_file) && ::File.mtime(cached_file) > Time.now - (60 * new_resource.splay) }
       end
 
       if platform == 'win32' 
