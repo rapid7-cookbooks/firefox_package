@@ -112,13 +112,14 @@ class Chef
         http.ssl_version = :TLSv1
       end
 
-      request = Net::HTTP::Get.new(uri.request_uri)
-      response = http.request(request)
-      doc = Oga.parse_html(response.body)
-
       cached_filename = ::File.join(Chef::Config[:file_cache_path], ::Digest::SHA1.hexdigest(download_uri))
 
       unless ::File.exists?(cached_filename) && ::File.mtime(cached_filename) > Time.now - (60 * new_resource.splay) && ! ::File.zero?(cached_filename)
+
+        request = Net::HTTP::Get.new(uri.request_uri)
+        response = http.request(request)
+        doc = Oga.parse_html(response.body)
+
         converge_by("Updating Firefox filename cache: #{cached_filename}") do
           f = ::File.open(cached_filename, 'w')
           f.write(doc.xpath('string(/html/body/table/tr[4]/td[2])'))
@@ -128,7 +129,6 @@ class Chef
 
       @requested_version_filename = ::File.read(cached_filename)
     end
-      
 
     def install_package
       platform = munged_platform
@@ -141,11 +141,10 @@ class Chef
         unless new_resource.checksum.nil? 
           checksum new_resource.checksum
         end
-        action [:create, :touch]
-        not_if { ::File.exists?(cached_file) && ::File.mtime(cached_file) > Time.now - (60 * new_resource.splay) }
+        action :create_if_missing
       end
 
-      if platform == 'win32' 
+      if platform == 'win32'
         windows_installer(filename, new_resource.version, new_resource.language, :install)
       else
         explode_tarball(cached_file, new_resource.path)
