@@ -11,3 +11,4 @@ supports 'ubuntu'
 
 depends 'poise'
 depends 'windows'
+depends 'build-essential'

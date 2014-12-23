@@ -94,13 +94,16 @@ class Chef
       end
     end
 
-    def requested_version_filename(versioned_uri)
+    def requested_version_filename(download_uri)
+      unless node['os'] == 'windows'
+        include_recipe 'build-essential::default'
+      end
       chef_gem 'oga'
 
       require 'net/http'
       require 'oga'
 
-      uri = URI.parse(versioned_uri)
+      uri = URI.parse(download_uri)
       http = Net::HTTP.new(uri.host, uri.port)
       if uri.port == 443
         http.use_ssl = true
@@ -117,12 +120,12 @@ class Chef
 
     def install_package
       platform = munged_platform
-      versioned_uri = "#{new_resource.uri}/#{new_resource.version}/#{munged_platform}/#{new_resource.language}/"
-      filename = requested_version_filename(versioned_uri)
+      download_uri = "#{new_resource.uri}/#{new_resource.version}/#{munged_platform}/#{new_resource.language}/"
+      filename = requested_version_filename(download_uri)
       cached_file = ::File.join(Chef::Config[:file_cache_path], filename)
 
       remote_file cached_file do
-        source "#{versioned_uri}/#{filename}"
+        source "#{download_uri}/#{filename}"
         unless new_resource.checksum.nil? 
           checksum new_resource.checksum
         end
