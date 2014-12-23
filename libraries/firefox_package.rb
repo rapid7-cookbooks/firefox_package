@@ -1,5 +1,5 @@
 #
-# Cookbook Name:: firefox_poise
+# Cookbook Name:: firefox_package
 # Recipe:: default
 #
 # Copyright (C) 2014 Rapid7, LLC
@@ -149,7 +149,7 @@ class Chef
         windows_installer(filename, new_resource.version, new_resource.language, :install)
       else
         explode_tarball(cached_file, new_resource.path)
-        node.set['firefox_poise']['firefox']["#{new_resource.version}"]["#{new_resource.language}"] = "#{new_resource.path}"
+        node.set['firefox_package']['firefox']["#{new_resource.version}"]["#{new_resource.language}"] = "#{new_resource.path}"
       end
     end
 
@@ -157,7 +157,7 @@ class Chef
       if munged_platform == 'win32'
         windows_installer(filename, new_resource.version, new_resource.language, :remove)
       else
-        directory node['firefox_poise']['firefox']["#{new_resource.version}"]["#{new_resource.language}"] do 
+        directory node['firefox_package']['firefox']["#{new_resource.version}"]["#{new_resource.language}"] do 
           recursive true
           action :delete
         end
