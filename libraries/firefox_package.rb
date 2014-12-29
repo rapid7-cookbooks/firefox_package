@@ -30,6 +30,7 @@ class Chef
     attribute(:platform, kind_of: String, default: lazy { node['os'] })
     attribute(:path, kind_of: String, default: lazy { node['os'] == 'windows' ? "C:/firefox/#{version}_#{language}" : "/opt/firefox/#{version}_#{language}" })
     attribute(:splay, kind_of: Integer, default: 0)
+    attribute(:link, kind_of: [String, Array, NilClass])
   end
 
   class Provider::FirefoxPackage < Provider
@@ -148,7 +149,21 @@ class Chef
         windows_installer(filename, new_resource.version, new_resource.language, :install)
       else
         explode_tarball(cached_file, new_resource.path)
-        node.set['firefox_package']['firefox']["#{new_resource.version}"]["#{new_resource.language}"] = "#{new_resource.path}"
+        node.set['firefox_package']['firefox']["#{new_resource.version}"]["#{new_resource.language}"] = new_resource.path
+        node.set['firefox_package']['firefox']["#{new_resource.version}"]["#{new_resource.language}"]['bin'] = ::File.join(new_resource.path, 'firefox')
+        unless new_resource.link.nil?
+          if new_resource.link.kind_of?(Array)
+            new_resource.link.each do |i|
+              link i do
+                to node['firefox_package']['firefox']["#{new_resource.version}"]["#{new_resource.language}"]['bin']
+              end
+            end
+          else
+            link new_resource.link do
+              to node['firefox_package']['firefox']["#{new_resource.version}"]["#{new_resource.language}"]['bin']
+            end
+          end
+        end
       end
     end
 

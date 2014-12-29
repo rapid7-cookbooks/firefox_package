@@ -50,6 +50,7 @@ end
 * `platform`  - Platform you wish to download and install. Defaults to the OS from which Chef is running.
 * `path`      - Path to install Firefox. Linux Only, Defaults to: ```/opt/firefox/#{version}_#{language}```
 * `splay`     - Time in minutes to wait before next contact to Mozilla servers. Not required, defaults to 0 (zero) minutes.
+* `link`      - Create the specfied symlink (Linux Only). This can be an array to create multiple symlinks to the same instance, or a string for a single symlink.
 
 
 ## License and Authors
