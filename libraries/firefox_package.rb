@@ -149,18 +149,17 @@ class Chef
         windows_installer(filename, new_resource.version, new_resource.language, :install)
       else
         explode_tarball(cached_file, new_resource.path)
-        node.set['firefox_package']['firefox']["#{new_resource.version}"]["#{new_resource.language}"] = new_resource.path
-        node.set['firefox_package']['firefox']["#{new_resource.version}"]["#{new_resource.language}"]['bin'] = ::File.join(new_resource.path, 'firefox')
+        node.set['firefox_package']['firefox']["#{new_resource.version}"]["#{new_resource.language}"] = new_resource.path.to_s
         unless new_resource.link.nil?
           if new_resource.link.kind_of?(Array)
             new_resource.link.each do |i|
               link i do
-                to node['firefox_package']['firefox']["#{new_resource.version}"]["#{new_resource.language}"]['bin']
+                to ::File.join(new_resource.path, 'firefox').to_s
               end
             end
           else
             link new_resource.link do
-              to node['firefox_package']['firefox']["#{new_resource.version}"]["#{new_resource.language}"]['bin']
+              to ::File.join(new_resource.path, 'firefox').to_s
             end
           end
         end
