@@ -111,6 +111,7 @@ class Chef
       if uri.port == 443
         http.use_ssl = true
         http.ssl_version = :TLSv1
+        http.ca_file = Chef::Config[:ssl_ca_file] if Chef::Config[:ssl_ca_file]
       end
 
       cached_filename = ::File.join(Chef::Config[:file_cache_path], ::Digest::SHA1.hexdigest(download_uri))
