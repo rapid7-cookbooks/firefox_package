@@ -133,13 +133,15 @@ class Chef
     end
 
     def install_package
+      require 'uri'
+
       platform = munged_platform
       download_uri = "#{new_resource.uri}/#{new_resource.version}/#{munged_platform}/#{new_resource.language}/"
       filename = requested_version_filename(download_uri)
       cached_file = ::File.join(Chef::Config[:file_cache_path], filename)
 
       remote_file cached_file do
-        source "#{download_uri}/#{filename}"
+        source URI.encode("#{download_uri}/#{filename}").to_s
         unless new_resource.checksum.nil? 
           checksum new_resource.checksum
         end
