@@ -151,6 +151,10 @@ class Chef
       if platform == 'win32'
         windows_installer(cached_file, new_resource.version, new_resource.language, :install)
       else
+        %w{'libasound2' 'libgtk2.0-0' 'libdbus-glib' 'libxt6'}.each do |pkg|
+          package pkg
+        end
+
         explode_tarball(cached_file, new_resource.path)
         node.set['firefox_package']['firefox']["#{new_resource.version}"]["#{new_resource.language}"] = new_resource.path.to_s
         unless new_resource.link.nil?
