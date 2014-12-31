@@ -149,7 +149,7 @@ class Chef
       end
 
       if platform == 'win32'
-        windows_installer(filename, new_resource.version, new_resource.language, :install)
+        windows_installer(cached_file, new_resource.version, new_resource.language, :install)
       else
         explode_tarball(cached_file, new_resource.path)
         node.set['firefox_package']['firefox']["#{new_resource.version}"]["#{new_resource.language}"] = new_resource.path.to_s
@@ -171,7 +171,7 @@ class Chef
 
     def remove_package
       if munged_platform == 'win32'
-        windows_installer(filename, new_resource.version, new_resource.language, :remove)
+        windows_installer(nil, new_resource.version, new_resource.language, :remove)
       else
         directory node['firefox_package']['firefox']["#{new_resource.version}"]["#{new_resource.language}"] do 
           recursive true
