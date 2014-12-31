@@ -151,7 +151,7 @@ class Chef
       if platform == 'win32'
         windows_installer(cached_file, new_resource.version, new_resource.language, :install)
       else
-        %w{'libasound2' 'libgtk2.0-0' 'libdbus-glib' 'libxt6'}.each do |pkg|
+        %w{'libasound2' 'libgtk2.0-0' 'libdbus-glib-1-2' 'libxt6'}.each do |pkg|
           package pkg
         end
 
