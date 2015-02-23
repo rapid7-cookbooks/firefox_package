@@ -1,0 +1,4 @@
+---
+driver:
+  name: docker
+  ssh_key: id_rsa

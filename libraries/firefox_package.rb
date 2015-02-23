@@ -136,7 +136,7 @@ class Chef
       require 'uri'
 
       platform = munged_platform
-      download_uri = "#{new_resource.uri}/#{new_resource.version}/#{munged_platform}/#{new_resource.language}/"
+      download_uri = "#{new_resource.uri}/#{new_resource.version}/#{platform}/#{new_resource.language}/"
       filename = requested_version_filename(download_uri)
       cached_file = ::File.join(Chef::Config[:file_cache_path], filename)
 

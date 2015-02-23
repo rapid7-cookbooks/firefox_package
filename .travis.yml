@@ -1,0 +1,15 @@
+sudo: false
+cache: bundler
+language: ruby
+rvm:
+- 2.1.4
+env:
+  global:
+  - KITCHEN_LOCAL_YAML=.kitchen.travis.yml
+bundler_args: "--binstubs"
+before_install:
+  - ssh-keygen -t rsa -b 1024 -P "" -f ~/.ssh/id_rsa
+
+script:
+- "./bin/foodcritic ."
+- "./bin/kitchen test -d always -c 2"
