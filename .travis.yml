@@ -9,7 +9,9 @@ env:
 bundler_args: "--binstubs"
 before_install:
   - ssh-keygen -t rsa -b 1024 -P "" -f ~/.ssh/id_rsa
+  - wget https://get.docker.io/builds/Linux/x86_64/docker-latest -O docker
+
 
 script:
 - "./bin/foodcritic ."
-- "./bin/kitchen test -d always -c 2"
+- "./bin/kitchen test -d always"

@@ -1,4 +1,5 @@
 ---
 driver:
   name: docker
+  binary: "./docker"
   ssh_key: id_rsa
