@@ -1,5 +1,10 @@
 # firefox_package
 
+[![Build Status](https://travis-ci.org/rapid7-cookbooks/firefox_package.svg)](https://travis-ci.org/rapid7-cookbooks/firefox_package)
+[![Cookbook Version](https://img.shields.io/cookbook/v/firefox_package.svg)](https://supermarket.chef.io/cookbooks/firefox_package)
+[![License](https://img.shields.io/badge/license-Apache_2-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
+
+
 This cookbook provides the ```firefox_package``` provider which can be used
 to install any version of firefox, including named versions such as 'latest-esr'
 for multiple platforms.
