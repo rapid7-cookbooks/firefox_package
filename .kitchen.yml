@@ -4,7 +4,9 @@ driver:
   require_chef_omnibus: latest
 
 provisioner:
-  name: chef_solo
+  name: chef_zero
+  client_rb:
+    audit_mode: :audit_only
 
 platforms:
   - name: ubuntu-14.04
@@ -12,5 +14,5 @@ platforms:
 suites:
   - name: default
     run_list:
-      - recipe[firefox_package]
+     - recipe[firefox_package_test]
     attributes:
