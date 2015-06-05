@@ -17,8 +17,8 @@ before_install:
   - echo "exit 101" | sudo tee /usr/sbin/policy-rc.d
   - sudo chmod +x /usr/sbin/policy-rc.d
   - curl -s https://packagecloud.io/install/repositories/chef/stable/script.deb.sh | sudo bash
-  - sudo apt-get -qqy update
 install:
+  - sudo apt-get update
   - sudo apt-get install -q -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" chefdk lxc-docker slirp
   - sudo sudo usermod -aG docker "$USER"
   - git clone git://github.com/cptactionhank/sekexe
