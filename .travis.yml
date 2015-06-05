@@ -12,13 +12,12 @@ env:
 bundler_args: "--binstubs"
 before_install:
   - ssh-keygen -t rsa -b 1024 -P "" -f ~/.ssh/id_rsa
-  - sudo sh -c "wget -qO- https://get.docker.io/gpg | apt-key add -"
-  - sudo sh -c "echo deb http://get.docker.io/ubuntu docker main > /etc/apt/sources.list.d/docker.list"
+  - sudo sh -c "curl -sSL https://get.docker.com/ | sh"
   - echo "exit 101" | sudo tee /usr/sbin/policy-rc.d
   - sudo chmod +x /usr/sbin/policy-rc.d
   - curl -s https://packagecloud.io/install/repositories/chef/stable/script.deb.sh | sudo bash
+  - sudo apt-get update -qqy
 install:
-  - sudo apt-get update
   - sudo apt-get install -q -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" chefdk lxc-docker slirp
   - sudo sudo usermod -aG docker "$USER"
   - git clone git://github.com/cptactionhank/sekexe
