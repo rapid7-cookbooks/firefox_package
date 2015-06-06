@@ -1,15 +1,21 @@
 ---
 driver:
-  name: docker
-  require_chef_omnibus: latest
+  name: vagrant
 
 provisioner:
   name: chef_zero
-  client_rb:
-    audit_mode: :audit_only
+#  client_rb:
+#    audit_mode: :audit_only
 
 platforms:
   - name: ubuntu-14.04
+  - name: windows-2012R2
+    driver_config:
+      box_url: https://wrock.blob.core.windows.net/vhds/vbox2012r2.box
+      communicator: winrm
+      vm_hostname: false
+    transport:
+      name: winrm
 
 suites:
   - name: default
