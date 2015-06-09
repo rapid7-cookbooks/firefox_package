@@ -1,3 +1,6 @@
+# Ensure we have an up to date repo cache.
+include_recipe 'apt' if platform_family?('debian')
+
 {
   'latest-esr' => [ '/usr/bin/firefox-latest-esr' ],
   'latest' => [ '/usr/bin/firefox-latest' ],

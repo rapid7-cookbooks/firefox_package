@@ -1,0 +1,2 @@
+[Install]
+InstallDirectoryPath=<%= @install_path %>

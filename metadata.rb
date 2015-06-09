@@ -9,6 +9,6 @@ version          '0.1.6'
 supports 'windows'
 supports 'ubuntu'
 
-depends 'poise'
+depends 'poise', '~> 1.0.12'
 depends 'windows'
 depends 'build-essential'
