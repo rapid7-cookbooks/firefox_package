@@ -1,31 +1,24 @@
-sudo: true
 cache: bundler
 language: ruby
 env:
   global:
   - KITCHEN_LOCAL_YAML=.kitchen.travis.yml
   - DEBIAN_FRONTEND=noninteractive
-  - "SLIRP_HOST=$(/sbin/ifconfig venet0:0 | grep 'inet addr' | awk -F: '{print $2}' | awk '{print $1}')"
-  - '"DOCKER_HOST=tcp://$SLIRP_HOST:2375"'
-  - DOCKER_PORT_RANGE=2400:2500
-  - 'SLIRP_PORTS="2375 $(seq 49153 49253)"'
+  - secure: cUR7/E51hpNMVZnReBGgYu6uczMGHro5bgpOMXHmnQE1KJmUfyrBepGt5NDXe1z5vq6pPBMU63YTdp8kBGjkqaf2Pf9huVOGCaMXM1PfBL8IzoKIPC5CgdIqx+sCrc2OMXxHZbDFTdePA2AksfIozx8N2GpWsGgL8Qw+ytPs9Rk=
 bundler_args: "--binstubs"
 before_install:
-  - ssh-keygen -t rsa -b 1024 -P "" -f ~/.ssh/id_rsa
-  - sudo sh -c "curl -sSL https://get.docker.com/ | sh"
-  - echo "exit 101" | sudo tee /usr/sbin/policy-rc.d
-  - sudo chmod +x /usr/sbin/policy-rc.d
-  - curl -s https://packagecloud.io/install/repositories/chef/stable/script.deb.sh | sudo bash
-  - sudo apt-get update -qqy
+- openssl aes-256-cbc -K $encrypted_7314b6bca65c_key -iv $encrypted_7314b6bca65c_iv
+  -in test/secrets.tar.enc -out test/secrets.tar -d
+- tar xvf test/secrets.tar
+- mkdir ~/.aws
+- mv credentials ~/.aws/
+- curl -s https://packagecloud.io/install/repositories/chef/stable/script.deb.sh |
+  sudo bash
+- sudo apt-get update -qqy
 install:
-  - sudo apt-get install -q -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" chefdk lxc-docker slirp
-  - sudo usermod -aG docker "$USER"
-  - curl -sLo .travis.d/uml https://github.com/jpetazzo/sekexe/raw/master/uml
-  - chmod +x .travis.d/uml
-before_script:
-   - "VERBOSE=1 .travis.d/run 'export DOCKER_CERT_PATH=/var/lib/docker && docker -d -H tcp://0.0.0.0:2375' &"
-   - "while ! docker info; do sleep 1; done"
+- sudo apt-get install -q -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
+  chefdk
+- sudo chef gem install kitchen-ec2
 script:
-  - docker version
-  - ./bin/foodcritic .
-  - ./bin/kitchen test -d always
+- chef exec foodcritic .
+- chef exec kitchen test -d always

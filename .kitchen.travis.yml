@@ -1,4 +1,16 @@
 ---
 driver:
-  name: docker
+  name: ec2
+  associate_public_ip_address: true
+  region: us-west-2
+  subnet_id: subnet-fa47868d
+
+transport:
   ssh_key: id_rsa
+
+platforms:
+  - name: ubuntu-14.04
+    driver:
+      image_id: ami-01083031
+    transport:
+      username: ubuntu
