@@ -1,4 +1,4 @@
-#
+
 # Cookbook Name:: firefox_package
 # Recipe:: default
 #
@@ -156,7 +156,7 @@ class Chef
 
       cached_filename = ::File.join(Chef::Config[:file_cache_path], ::Digest::SHA1.hexdigest(download_uri))
 
-      unless ::File.exists?(cached_filename) && ::File.mtime(cached_filename) > Time.now - (60 * new_resource.splay) && ! ::File.zero?(cached_filename)
+      unless ::File.exists?(cached_filename) && ::File.mtime(cached_filename) > Time.now - new_resource.splay && ! ::File.zero?(cached_filename)
 
         request = Net::HTTP::Get.new(uri.request_uri)
         response = http.request(request)
