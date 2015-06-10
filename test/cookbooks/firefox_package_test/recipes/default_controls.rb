@@ -68,11 +68,15 @@ control_group 'Firefox Installation' do
         expect(file(bin_path)).to be_file
       end
 
-# This seems to be broken
-#      it 'is the correct version of Firefox'do
-#        expect(specified_version.stdout).to be_version('37.0')
-#      end
+      # This seems to be broken for Windows.
+      xit 'is functional when invoked' do
+        expect(specified_version.stdout).to match(/Mozilla Firefox 37.0/)
+      end
 
+      # This seems to be broken
+      xit 'is the correct version of Firefox' do
+        expect(specified_version.stdout).to be_version('37.0')
+      end
     end
   end
 end
