@@ -29,10 +29,12 @@ class Chef
     attribute(:language, kind_of: String, default: 'en-US')
     attribute(:platform, kind_of: String, default: lazy { node['os'] })
     attribute(:path, kind_of: String,
-              default: lazy { platform_family?('windows') ? 'C:\Program Files (x86)\Mozilla Firefox\\' + "#{version}-#{language}" : "/opt/firefox/#{version}-#{language}" })
+              default: lazy { platform_family?('windows') ? "C:\\Program Files (x86)\\Mozilla Firefox\\#{version}_#{language}" : "/opt/firefox/#{version}_#{language}" })
     attribute(:splay, kind_of: Integer, default: 0)
     attribute(:link, kind_of: [String, Array, NilClass])
-    attribute(:windows_ini, template: true, default_options: lazy {{ install_path: path }})
+    attribute(:windows_ini_source, kind_of: String, default: 'windows_ini_source')
+    attribute(:windows_ini_content, kind_of: String, default: lazy { { :install_path => self.path } })
+    attribute(:windows_ini_cookbook, kind_of: String, default: 'firefox_package')
   end
 
   class Provider::FirefoxPackage < Provider
@@ -117,17 +119,18 @@ class Chef
     end
 
     def windows_installer(filename, version, lang, req_action)
+      rendered_ini = "#{Chef::Config[:file_cache_path]}\\firefox-#{version}.ini"
 
-      rendered_ini = ::File.join(Chef::Config[:file_cache_path], "firefox-#{version}.ini")
-
-      file rendered_ini do
-        content new_resource.windows_ini_content
+      template rendered_ini do
+        source new_resource.windows_ini_source
+        variables new_resource.windows_ini_content
+        cookbook new_resource.windows_ini_cookbook
       end
 
       windows_package "Mozilla Firefox #{windows_long_version(version)} (x86 #{lang})" do
         source filename
         installer_type :custom
-        options "-ms /INI=\"#{rendered_ini}\""
+        options "/S /INI=#{rendered_ini}"
         action req_action
       end
     end
@@ -181,14 +184,10 @@ class Chef
 
       remote_file cached_file do
         source URI.encode("#{download_uri}/#{filename}").to_s
-        # If no checksum is specified, assume any existing file is
-        # correct to reduce download overhead.
-        if new_resource.checksum.nil?
-          action :create_if_missing
-        else
+        unless new_resource.checksum.nil?
           checksum new_resource.checksum
-          action :create
         end
+        action :create
       end
 
       if platform == 'win32'

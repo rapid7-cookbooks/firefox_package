@@ -1,5 +1,5 @@
 control_group 'Firefox Installation' do
-  if platform?('ubuntu')
+  if ['debian', 'ubuntu'].include?(os[:family])
     control 'latest-esr' do
       subject(:latest_esr) { command('/opt/firefox/latest-esr_en-US/firefox --version') }
       it 'is installed and symlinked' do
@@ -41,9 +41,38 @@ control_group 'Firefox Installation' do
         expect(specified_version.stdout).to match(/Mozilla Firefox 37.0/)
       end
     end
-  elsif platform?('windows')
+  elsif os[:family] == 'windows'
     control 'latest-esr' do
-      subject(:latest_esr) { command('') }
+      let(:bin_path) { 'C:\Program Files (x86)\Mozilla Firefox\latest-esr_en-US\firefox.exe' }
+      subject(:latest_esr) { command( "\"#{bin_path}\" --version") }
+
+      it 'is installed' do
+        expect(file(bin_path)).to be_file
+      end
+    end
+
+    control 'latest' do
+      let(:bin_path) {'C:\Program Files (x86)\Mozilla Firefox\latest_en-US\firefox.exe' }
+      subject(:latest_esr) { command( "\"#{bin_path}\" --version") }
+
+      it 'is installed' do
+        expect(file(bin_path)).to be_file
+      end
+    end
+
+    control '37.0' do
+      let(:bin_path) {'C:\Program Files (x86)\Mozilla Firefox\37.0_en-US\firefox.exe' }
+      subject(:specified_version) { command( "\"#{bin_path}\" --version") }
+
+      it 'is installed' do
+        expect(file(bin_path)).to be_file
+      end
+
+# This seems to be broken
+#      it 'is the correct version of Firefox'do
+#        expect(specified_version.stdout).to be_version('37.0')
+#      end
+
     end
   end
 end
