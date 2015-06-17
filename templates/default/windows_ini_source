@@ -1,0 +1,3 @@
+[Install]
+ InstallDirectoryPath="<%= @install_path %>"
+ MaintenanceService=false

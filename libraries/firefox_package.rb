@@ -1,4 +1,4 @@
-#
+
 # Cookbook Name:: firefox_package
 # Recipe:: default
 #
@@ -18,9 +18,9 @@
 #
 
 class Chef
-
   class Resource::FirefoxPackage < Resource
     include Poise
+    include Chef::DSL::PlatformIntrospection
     actions(:install, :upgrade, :remove)
 
     attribute(:version, kind_of: String, name_attribute: true)
@@ -28,15 +28,18 @@ class Chef
     attribute(:uri, kind_of: String, default: 'https://download-installer.cdn.mozilla.net/pub/firefox/releases')
     attribute(:language, kind_of: String, default: 'en-US')
     attribute(:platform, kind_of: String, default: lazy { node['os'] })
-    attribute(:path, kind_of: String, default: lazy { node['os'] == 'windows' ? "C:/firefox/#{version}_#{language}" : "/opt/firefox/#{version}_#{language}" })
+    attribute(:path, kind_of: String,
+              default: lazy { platform_family?('windows') ? "C:\\Program Files (x86)\\Mozilla Firefox\\#{version}_#{language}" : "/opt/firefox/#{version}_#{language}" })
     attribute(:splay, kind_of: Integer, default: 0)
     attribute(:link, kind_of: [String, Array, NilClass])
+    attribute(:windows_ini_source, kind_of: String, default: 'windows_ini_source')
+    attribute(:windows_ini_content, kind_of: String, default: lazy { { :install_path => self.path } })
+    attribute(:windows_ini_cookbook, kind_of: String, default: 'firefox_package')
   end
 
   class Provider::FirefoxPackage < Provider
     include Poise
-    # Work-around for poise issue #8
-    include Chef::DSL::Recipe
+    include Chef::DSL::PlatformIntrospection
 
     def action_install
       converge_by("installing Firefox #{new_resource.version} #{new_resource.language}") do
@@ -74,33 +77,70 @@ class Chef
       else
         @munged_platform = new_resource.platform
       end
-    end 
+    end
 
-    def explode_tarball(file, dest_path)
+    def explode_tarball(filename, dest_path)
       directory dest_path do
         recursive true
       end
 
       execute 'untar-firefox' do
-        command "tar --strip-components=1 -xjf #{file} -C #{dest_path}"
+        command "tar --strip-components=1 -xjf #{filename} -C #{dest_path}"
         not_if { ::File.exist?(::File.join(dest_path, 'firefox')) }
       end
     end
 
-    def windows_installer(file, version, lang, req_action)
-      windows_package "Mozilla Firefox #{version} (x86 #{lang})" do
-        source file
+    def parse_version(filename)
+      version = /(.[0-9]\.[0-9])(\.[1-9])?/.match(filename)
+      version
+    end
+
+    def windows_long_version(version)
+      if version.nil?
+        version = parse_version(filename)
+        long_version = "#{version}"
+        if esr?(filename)
+          long_version = "#{parse_version(filename)} ESR"
+        end
+      else
+        long_version = version
+      end
+    end
+
+
+    def esr?(filename)
+      if filename =~ /esr/
+        true
+      else
+        false
+      end
+    end
+
+    def windows_installer(filename, version, lang, req_action)
+      rendered_ini = "#{Chef::Config[:file_cache_path]}\\firefox-#{version}.ini"
+
+      template rendered_ini do
+        source new_resource.windows_ini_source
+        variables new_resource.windows_ini_content
+        cookbook new_resource.windows_ini_cookbook
+      end
+
+      windows_package "Mozilla Firefox #{windows_long_version(version)} (x86 #{lang})" do
+        source filename
         installer_type :custom
-        options '-ms'
+        options "/S /INI=#{rendered_ini}"
         action req_action
       end
     end
 
     def requested_version_filename(download_uri)
-      unless node['os'] == 'windows'
+      unless platform_family?('windows')
         include_recipe 'build-essential::default'
       end
-      chef_gem 'oga'
+
+      chef_gem 'oga' do
+        compile_time true
+      end
 
       require 'net/http'
       require 'oga'
@@ -116,7 +156,7 @@ class Chef
 
       cached_filename = ::File.join(Chef::Config[:file_cache_path], ::Digest::SHA1.hexdigest(download_uri))
 
-      unless ::File.exists?(cached_filename) && ::File.mtime(cached_filename) > Time.now - (60 * new_resource.splay) && ! ::File.zero?(cached_filename)
+      unless ::File.exists?(cached_filename) && ::File.mtime(cached_filename) > Time.now - new_resource.splay && ! ::File.zero?(cached_filename)
 
         request = Net::HTTP::Get.new(uri.request_uri)
         response = http.request(request)
@@ -136,16 +176,16 @@ class Chef
       require 'uri'
 
       platform = munged_platform
-      download_uri = "#{new_resource.uri}/#{new_resource.version}/#{munged_platform}/#{new_resource.language}/"
+      download_uri = "#{new_resource.uri}/#{new_resource.version}/#{platform}/#{new_resource.language}/"
       filename = requested_version_filename(download_uri)
       cached_file = ::File.join(Chef::Config[:file_cache_path], filename)
 
       remote_file cached_file do
         source URI.encode("#{download_uri}/#{filename}").to_s
-        unless new_resource.checksum.nil? 
+        unless new_resource.checksum.nil?
           checksum new_resource.checksum
         end
-        action :create_if_missing
+        action :create
       end
 
       if platform == 'win32'

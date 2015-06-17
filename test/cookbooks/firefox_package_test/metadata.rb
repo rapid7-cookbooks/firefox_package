@@ -6,4 +6,5 @@ description 'Installs/Configures firefox_package_test'
 long_description 'Installs/Configures firefox_package_test'
 version '0.1.0'
 
+depends 'apt'
 depends 'firefox_package'
