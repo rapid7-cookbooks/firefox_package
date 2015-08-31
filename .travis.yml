@@ -1,24 +1,21 @@
+sudo: required
+services:
+  - docker
 cache: bundler
 language: ruby
+bundler_args: "--binstubs"
 env:
   global:
   - KITCHEN_LOCAL_YAML=.kitchen.travis.yml
   - DEBIAN_FRONTEND=noninteractive
-  - secure: cUR7/E51hpNMVZnReBGgYu6uczMGHro5bgpOMXHmnQE1KJmUfyrBepGt5NDXe1z5vq6pPBMU63YTdp8kBGjkqaf2Pf9huVOGCaMXM1PfBL8IzoKIPC5CgdIqx+sCrc2OMXxHZbDFTdePA2AksfIozx8N2GpWsGgL8Qw+ytPs9Rk=
-bundler_args: "--binstubs"
 before_install:
-- openssl aes-256-cbc -K $encrypted_7314b6bca65c_key -iv $encrypted_7314b6bca65c_iv
-  -in test/secrets.tar.enc -out test/secrets.tar -d
-- tar xvf test/secrets.tar
-- mkdir ~/.aws
-- mv credentials ~/.aws/
 - curl -s https://packagecloud.io/install/repositories/chef/stable/script.deb.sh |
   sudo bash
-- sudo apt-get update -qqy
+- sudo apt-get update -qy
 install:
 - sudo apt-get install -q -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
   chefdk
-- sudo chef gem install kitchen-ec2
+- sudo chef gem install kitchen-docker-api
 script:
-- chef exec foodcritic .
-- chef exec kitchen test -d always
+- /opt/chefdk/bin/chef exec foodcritic .
+- /opt/chefdk/bin/chef exec kitchen test -d never
