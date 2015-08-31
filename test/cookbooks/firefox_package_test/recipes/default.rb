@@ -10,6 +10,3 @@ include_recipe 'apt' if platform_family?('debian')
     link linkto
   end
 end
-
-include_recipe 'firefox_package_test::default_controls'
-
