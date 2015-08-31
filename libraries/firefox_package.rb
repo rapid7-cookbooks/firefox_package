@@ -17,12 +17,16 @@
 # limitations under the License.
 #
 
-class Chef
-  class Resource::FirefoxPackage < Resource
+require 'poise'
+require 'chef/resource'
+require 'chef/provider'
+
+module FirefoxPackage
+  class Resource < Chef::Resource
     include Poise
     include Chef::DSL::PlatformIntrospection
+    provides(:firefox_package)
     actions(:install, :upgrade, :remove)
-    default_action(:install)
 
     attribute(:version, kind_of: String, name_attribute: true)
     attribute(:checksum, kind_of: String)
@@ -38,9 +42,10 @@ class Chef
     attribute(:windows_ini_cookbook, kind_of: String, default: 'firefox_package')
   end
 
-  class Provider::FirefoxPackage < Provider
+  class Provider < Chef::Provider
     include Poise
     include Chef::DSL::PlatformIntrospection
+    provides(:firefox_package)
 
     def action_install
       converge_by("installing Firefox #{new_resource.version} #{new_resource.language}") do
