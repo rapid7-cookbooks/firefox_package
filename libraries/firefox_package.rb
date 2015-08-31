@@ -86,7 +86,10 @@ class Chef
 
       execute 'untar-firefox' do
         command "tar --strip-components=1 -xjf #{filename} -C #{dest_path}"
-        not_if { ::File.exist?(::File.join(dest_path, 'firefox')) }
+        not_if do
+          firefox_bin = ::File.join(dest_path, 'firefox')
+          ::File.exist?(firefox_bin) && ::File.mtime(firefox_bin) > Time.now - new_resource.splay
+        end
       end
     end
 
