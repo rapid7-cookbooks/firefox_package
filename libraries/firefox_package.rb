@@ -22,6 +22,7 @@ class Chef
     include Poise
     include Chef::DSL::PlatformIntrospection
     actions(:install, :upgrade, :remove)
+    default_action(:install)
 
     attribute(:version, kind_of: String, name_attribute: true)
     attribute(:checksum, kind_of: String)
