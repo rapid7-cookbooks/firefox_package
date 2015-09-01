@@ -97,8 +97,7 @@ module FirefoxPackage
     end
 
     def parse_version(filename)
-      version = /(.[0-9]\.[0-9])(\.[1-9])?/.match(filename)
-      version
+      /(.\d\.\d.\d|.\d\.\d)/.match(filename)
     end
 
     def windows_long_version(version)
