@@ -56,9 +56,8 @@ module FirefoxPackage
     end
 
     def action_upgrade
-      converge_by("upgrading Firfox to version #{new_resource.version}") do
+      converge_by("upgrading Firefox to version #{new_resource.version}") do
         notifying_block do
-          remove_package
           install_package
         end
       end
@@ -92,27 +91,69 @@ module FirefoxPackage
 
       execute 'untar-firefox' do
         command "tar --strip-components=1 -xjf #{filename} -C #{dest_path}"
-        not_if { ::File.exist?(::File.join(dest_path, 'firefox')) }
+        not_if {
+          installed_version(
+            ::File.join(dest_path, 'firefox')
+          ) > parse_version(filename)
+        }
       end
     end
 
-    def parse_version(filename)
-      /(.\d\.\d.\d|.\d\.\d)/.match(filename)
+    # Obtain version string from an installed version.
+    # @param [String] Path the Firefox executable.
+    # @return [Versionomy::Value] Returns the installed version, or 0.0 if not
+    # installed in the specified path.
+    def installed_version(path)
+      if ::File.executable?(path)
+        require 'mixlib/shellout'
+
+        cmd = Mixlib::ShellOut.new(path, '--version')
+        cmd.run_command
+
+        version = parse_version(cmd.stdout)
+      else
+        version =  parse_version('0.0')
+      end
+
+      version
     end
 
+    # Parse the version number from a given string.
+    # @param [String] String containing a Firefox version.
+    # @return [Versionomy::Value] Returns a Versonomy::Value object which
+    # can be used for comparing versions like 38.0 and 38.0.0.
+    def parse_version(str)
+      chef_gem 'versionomy' do
+        compile_time true
+      end
+
+      require 'versionomy'
+
+      version_string = /.\d\.\d.\d|\d+.\d/.match(str).to_s
+      Versionomy.parse(version_string)
+    end
+
+    # Appends ESR to the version string when an ESR version is installed.
+    # This is done so the value can be matched against the Windows registry
+    # key value to make the installation idempotent.
+    # @param [String] Version value as a string.
+    # @return [String] When version is an ESR, the value is returned with the
+    # string EST appended.
     def windows_long_version(version)
       if version.nil?
         version = parse_version(filename)
-        long_version = "#{version}"
+        long_version = version.to_s
         if esr?(filename)
-          long_version = "#{parse_version(filename)} ESR"
+          long_version = "#{parse_version(filename).to_s} ESR"
         end
       else
         long_version = version
       end
     end
 
-
+    # Determines if the version is an ESR version.
+    # @param [String]
+    # @return [Boolean]
     def esr?(filename)
       if filename =~ /esr/
         true
