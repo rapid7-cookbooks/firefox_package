@@ -117,7 +117,7 @@ module FirefoxPackage
 
         version = parse_version(cmd.stdout)
       else
-        version =  parse_version(0)
+        version =  parse_version('0.0')
       end
 
       version
@@ -128,7 +128,7 @@ module FirefoxPackage
     # @return [Gem::Version] Returns a Versonomy::Value object which
     # can be used for comparing versions like 38.0 and 38.0.0.
     def parse_version(str)
-      version_string = /.\d\.\d.\d|\d+.\d/.match(str)
+      version_string = /.\d\.\d.\d|\d+.\d/.match(str).to_s
       Gem::Version.new(version_string)
     end
 
