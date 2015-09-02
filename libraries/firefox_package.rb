@@ -84,6 +84,11 @@ module FirefoxPackage
       end
     end
 
+    # Explodes tarballs into a path stripping the top level directory from
+    # the tarball. This has a not_if guard which prevents exploding when a
+    # pre-existing version is on disk and is the same or newer.
+    # @param [String] Full path to tarball to extract.
+    # @param [String] Destination path to explode tarball.
     def explode_tarball(filename, dest_path)
       directory dest_path do
         recursive true
@@ -94,14 +99,14 @@ module FirefoxPackage
         not_if {
           installed_version(
             ::File.join(dest_path, 'firefox')
-          ) > parse_version(filename)
+          ) >= parse_version(filename)
         }
       end
     end
 
     # Obtain version string from an installed version.
     # @param [String] Path the Firefox executable.
-    # @return [Versionomy::Value] Returns the installed version, or 0.0 if not
+    # @return [Gem::Version] Returns the installed version, or 0.0 if not
     # installed in the specified path.
     def installed_version(path)
       if ::File.executable?(path)
@@ -112,7 +117,7 @@ module FirefoxPackage
 
         version = parse_version(cmd.stdout)
       else
-        version =  parse_version('0.0')
+        version =  parse_version(0)
       end
 
       version
@@ -120,17 +125,11 @@ module FirefoxPackage
 
     # Parse the version number from a given string.
     # @param [String] String containing a Firefox version.
-    # @return [Versionomy::Value] Returns a Versonomy::Value object which
+    # @return [Gem::Version] Returns a Versonomy::Value object which
     # can be used for comparing versions like 38.0 and 38.0.0.
     def parse_version(str)
-      chef_gem 'versionomy' do
-        compile_time true
-      end
-
-      require 'versionomy'
-
-      version_string = /.\d\.\d.\d|\d+.\d/.match(str).to_s
-      Versionomy.parse(version_string)
+      version_string = /.\d\.\d.\d|\d+.\d/.match(str)
+      Gem::Version.new(version_string)
     end
 
     # Appends ESR to the version string when an ESR version is installed.
