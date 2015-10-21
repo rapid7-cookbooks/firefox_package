@@ -15,7 +15,7 @@ before_install:
 install:
 - sudo apt-get install -q -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
   chefdk
-- sudo chef gem install kitchen-docker-api
+- sudo chef gem install kitchen-docker
 script:
 - /opt/chefdk/bin/chef exec foodcritic .
 - /opt/chefdk/bin/chef exec kitchen test -d never
