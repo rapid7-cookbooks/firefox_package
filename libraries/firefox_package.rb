@@ -30,7 +30,7 @@ module FirefoxPackage
 
     attribute(:version, kind_of: String, name_attribute: true)
     attribute(:checksum, kind_of: String)
-    attribute(:uri, kind_of: String, default: 'https://download-installer.cdn.mozilla.net/pub/firefox/releases')
+    attribute(:uri, kind_of: String, default: 'http://download-installer-origin.cdn.mozilla.net/pub/firefox/releases/')
     attribute(:language, kind_of: String, default: 'en-US')
     attribute(:platform, kind_of: String, default: lazy { node['os'] })
     attribute(:path, kind_of: String,
