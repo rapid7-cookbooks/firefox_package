@@ -192,29 +192,39 @@ module FirefoxPackage
       require 'digest/sha1'
 
       uri = URI.parse(download_uri)
+      # Mozilla uses an object store which seems to expect trailing slashes
+      # to requrest a file index.
+      uri.path = uri.path + '/' unless uri.path =~ /\/$/
       http = Net::HTTP.new(uri.host, uri.port)
       if uri.port == 443
         http.use_ssl = true
         http.ssl_version = :TLSv1
         http.ca_file = Chef::Config[:ssl_ca_file] if Chef::Config[:ssl_ca_file]
+        http.verify_mode = OpenSSL::SSL::VERIFY_PEER
       end
 
       cached_filename = ::File.join(Chef::Config[:file_cache_path], ::Digest::SHA1.hexdigest(download_uri))
 
-      unless ::File.exists?(cached_filename) && ::File.mtime(cached_filename) > Time.now - new_resource.splay && ! ::File.zero?(cached_filename)
-
+      if ::File.exists?(cached_filename) && ::File.mtime(cached_filename) > Time.now - new_resource.splay && ! ::File.zero?(cached_filename)
+        ::File.read(cached_filename)
+      else
         request = Net::HTTP::Get.new(uri.request_uri)
         response = http.request(request)
+        raise response.error! if response.code.to_i >= 400
         doc = Oga.parse_html(response.body)
+        remote_filename = doc.xpath('//tr/td/descendant::*/text()').last.text
 
-        converge_by("Updating Firefox filename cache: #{cached_filename}") do
-          f = ::File.open(cached_filename, 'w')
-          f.write(doc.xpath('string(/html/body/table/tr[4]/td[2])'))
-          f.close
+        if doc.nil? || remote_filename.empty?
+          raise StandardError, "The server #{uri.host} responded from #{uri.path} with an unexpected document:\n #{response.body}"
+        else
+          converge_by("Updating Firefox filename cache: #{cached_filename} with content: #{remote_filename}") do
+            file cached_filename do
+              content remote_filename
+            end
+          end
         end
+        remote_filename
       end
-
-      @requested_version_filename = ::File.read(cached_filename)
     end
 
     def install_package
@@ -226,7 +236,7 @@ module FirefoxPackage
       cached_file = ::File.join(Chef::Config[:file_cache_path], filename)
 
       remote_file cached_file do
-        source URI.encode("#{download_uri}/#{filename}").to_s
+        source URI.encode("#{download_uri}#{filename}").to_s
         unless new_resource.checksum.nil?
           checksum new_resource.checksum
         end
