@@ -1,6 +1,6 @@
 ---
 driver:
-  name: vagrant
+  name: docker
 
 provisioner:
   name: chef_zero
@@ -9,14 +9,16 @@ provisioner:
 
 platforms:
   - name: ubuntu-14.04
-  - name: windows-2012R2
+  - name: ubuntu-12.04
+  - name: centos-6
+  - name: windows-2012r2
     driver:
-      customize:
-        usbehci: "off"
-    driver_config:
-      box_url: https://wrock.blob.core.windows.net/vhds/vbox2012r2.box
-      communicator: winrm
-      vm_hostname: false
+      name: ec2
+      region: us-west-2
+      availability_zone: b
+      image_id: ami-f8f715cb
+      instance_type: t2.small
+      associate_public_ip: true
     transport:
       name: winrm
 

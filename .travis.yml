@@ -1,6 +1,6 @@
 sudo: required
 services:
-  - docker
+- docker
 cache: bundler
 language: ruby
 bundler_args: "--binstubs"
@@ -8,6 +8,9 @@ env:
   global:
   - KITCHEN_LOCAL_YAML=.kitchen.travis.yml
   - DEBIAN_FRONTEND=noninteractive
+  - secure: GXLdokNG/5Oell9JlYcXvdg49UlpdIwtpYjADpf3kDDQ1sAp3o9x9kNhmflYSxg6RYipTghjyL4f+jHIK9OoEWfViXJaLNsuAqaeSoJd/kDKb2JnK5XikJ2JE1QdVY7bj05HHc7EPvLgGwqyc0LiG0h74m4w8wPZckB3s9srq2U=
+  - secure: N5XxTQOD6h4hV+nzYowp1EWbZJu/wLpQ09xasiA0442M2Fog5oI1cuJICv/C/KpG+1RkznxSbos92XnZZRjsdcRELDZnA8yWSHiYPQ+bbk5MnTd7r881JxeFloRgtjDpW92N34hI9z2MyLp9KKgeXJ9qQQwn3sB87iHSxlkeQCQ=
+  - secure: R7HMtttMrmq+UyBtAyKmH9AJsJQBZ+91ODCeynqgHtmmdrrFsp+A7jmaQjQdD1MUSRS9zzJcS2hjQ5DTy4XRjLwkX2rKKfsLF/98CNG6fmlQKKpKP/aCI7FQefjoMPuD+9Mkvbhzt+0Hun5oc/FTuGEnu1oSlW1G0HiVMpURzUw=
 before_install:
 - curl -s https://packagecloud.io/install/repositories/chef/stable/script.deb.sh |
   sudo bash
@@ -17,5 +20,5 @@ install:
   chefdk
 - sudo chef gem install kitchen-docker
 script:
-- /opt/chefdk/bin/chef exec foodcritic .
-- /opt/chefdk/bin/chef exec kitchen test -d never
+- "/opt/chefdk/bin/chef exec foodcritic ."
+- "/opt/chefdk/bin/chef exec kitchen test -d never"
