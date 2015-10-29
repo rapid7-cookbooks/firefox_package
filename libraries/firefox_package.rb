@@ -143,7 +143,7 @@ module FirefoxPackage
         version = parse_version(filename)
         long_version = version.to_s
         if esr?(filename)
-          long_version = "#{parse_version(filename).to_s} ESR"
+          long_version = "#{parse_version(filename)} ESR"
         end
       else
         long_version = version
@@ -205,7 +205,7 @@ module FirefoxPackage
 
       cached_filename = ::File.join(Chef::Config[:file_cache_path], ::Digest::SHA1.hexdigest(download_uri))
 
-      if ::File.exists?(cached_filename) && ::File.mtime(cached_filename) > Time.now - new_resource.splay && ! ::File.zero?(cached_filename)
+      if ::File.exist?(cached_filename) && ::File.mtime(cached_filename) > Time.now - new_resource.splay && ! ::File.zero?(cached_filename)
         ::File.read(cached_filename)
       else
         request = Net::HTTP::Get.new(uri.request_uri)
@@ -239,21 +239,20 @@ module FirefoxPackage
 
       remote_file cached_file do
         source URI.encode("#{download_uri}#{filename}").to_s
-        unless new_resource.checksum.nil?
-          checksum new_resource.checksum
-        end
+        checksum new_resource.checksum unless new_resource.checksum.nil?
         action :create
       end
 
       if platform == 'win32'
-        windows_installer(cached_file, new_resource.version, new_resource.language, :install)
+        windows_installer(cached_file, new_resource.version,
+                          new_resource.language, :install)
       else
         package %w{libasound2 libgtk2.0-0 libdbus-glib-1-2 libxt6}
 
         explode_tarball(cached_file, new_resource.path)
         node.set['firefox_package']['firefox']["#{new_resource.version}"]["#{new_resource.language}"] = new_resource.path.to_s
         unless new_resource.link.nil?
-          if new_resource.link.kind_of?(Array)
+          if new_resource.link.is_a?(Array)
             new_resource.link.each do |i|
               link i do
                 to ::File.join(new_resource.path, 'firefox').to_s
@@ -270,14 +269,14 @@ module FirefoxPackage
 
     def remove_package
       if munged_platform == 'win32'
-        windows_installer(nil, new_resource.version, new_resource.language, :remove)
+        windows_installer(nil, new_resource.version,
+                          new_resource.language, :remove)
       else
-        directory node['firefox_package']['firefox']["#{new_resource.version}"]["#{new_resource.language}"] do 
+        directory node['firefox_package']['firefox']["#{new_resource.version}"]["#{new_resource.language}"] do
           recursive true
           action :delete
         end
       end
     end
-
   end
 end
