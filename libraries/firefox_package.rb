@@ -194,7 +194,7 @@ module FirefoxPackage
       uri = URI.parse(download_uri)
       # Mozilla uses an object store which seems to expect trailing slashes
       # to requrest a file index.
-      uri.path = uri.path + '/' unless uri.path =~ /\/$/
+      uri.path = "#{uri.path}/" unless uri.path.end_with?('/')
       http = Net::HTTP.new(uri.host, uri.port)
       if uri.port == 443
         http.use_ssl = true
@@ -248,7 +248,7 @@ module FirefoxPackage
       if platform == 'win32'
         windows_installer(cached_file, new_resource.version, new_resource.language, :install)
       else
-        package %w{'libasound2' 'libgtk2.0-0' 'libdbus-glib-1-2' 'libxt6'}
+        package %w{libasound2 libgtk2.0-0 libdbus-glib-1-2 libxt6}
 
         explode_tarball(cached_file, new_resource.path)
         node.set['firefox_package']['firefox']["#{new_resource.version}"]["#{new_resource.language}"] = new_resource.path.to_s
