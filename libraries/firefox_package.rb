@@ -212,7 +212,9 @@ module FirefoxPackage
         response = http.request(request)
         raise response.error! if response.code.to_i >= 400
         doc = Oga.parse_html(response.body)
-        remote_filename = doc.xpath('//tr/td/descendant::*/text()').last.text
+        remote_filename = doc.xpath('//tr/td/descendant::*/text()').to_a.delete_if { |element|
+          element.text.match('Stub') || element.text.match('\.\.')
+        }.last.text
 
         if doc.nil? || remote_filename.empty?
           raise StandardError, "The server #{uri.host} responded from #{uri.path} with an unexpected document:\n #{response.body}"
