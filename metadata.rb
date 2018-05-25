@@ -4,11 +4,11 @@ maintainer_email 'ryan_hass@rapid7.com'
 license          'Apache 2.0'
 description      'Installs/Configures firefox_package'
 long_description 'Installs/Configures firefox_package'
-version          '0.4.0'
+version          '0.4.1'
 
 supports 'windows'
 supports 'ubuntu'
 
-depends 'poise', '~> 2.3.2'
+depends 'poise'
 depends 'windows'
 depends 'build-essential'
