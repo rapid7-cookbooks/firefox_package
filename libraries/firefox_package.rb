@@ -250,7 +250,7 @@ module FirefoxPackage
         package %w{libasound2 libgtk2.0-0 libdbus-glib-1-2 libxt6}
 
         explode_tarball(cached_file, new_resource.path)
-        node.set['firefox_package']['firefox']["#{new_resource.version}"]["#{new_resource.language}"] = new_resource.path.to_s
+        node.default['firefox_package']['firefox']["#{new_resource.version}"]["#{new_resource.language}"] = new_resource.path.to_s
         unless new_resource.link.nil?
           if new_resource.link.is_a?(Array)
             new_resource.link.each do |i|
